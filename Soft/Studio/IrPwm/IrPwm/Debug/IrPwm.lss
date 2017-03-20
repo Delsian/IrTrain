@@ -1,0 +1,515 @@
+
+IrPwm.elf:     file format elf32-avr
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         0000027e  00000000  00000000  00000094  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000006  00800060  0000027e  00000312  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000006  00800066  00800066  00000318  2**0
+                  ALLOC
+  3 .comment      00000030  00000000  00000000  00000318  2**0
+                  CONTENTS, READONLY
+  4 .note.gnu.avr.deviceinfo 0000003c  00000000  00000000  00000348  2**2
+                  CONTENTS, READONLY
+  5 .debug_aranges 00000048  00000000  00000000  00000384  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  6 .debug_info   0000057b  00000000  00000000  000003cc  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  7 .debug_abbrev 0000043c  00000000  00000000  00000947  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  8 .debug_line   0000034a  00000000  00000000  00000d83  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  9 .debug_frame  000000e4  00000000  00000000  000010d0  2**2
+                  CONTENTS, READONLY, DEBUGGING
+ 10 .debug_str    0000031b  00000000  00000000  000011b4  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 11 .debug_loc    00000223  00000000  00000000  000014cf  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 12 .debug_ranges 00000050  00000000  00000000  000016f2  2**0
+                  CONTENTS, READONLY, DEBUGGING
+
+Disassembly of section .text:
+
+00000000 <__vectors>:
+   0:	09 c0       	rjmp	.+18     	; 0x14 <__ctors_end>
+   2:	40 c0       	rjmp	.+128    	; 0x84 <__vector_1>
+   4:	20 c0       	rjmp	.+64     	; 0x46 <__bad_interrupt>
+   6:	fc c0       	rjmp	.+504    	; 0x200 <__vector_3>
+   8:	1e c0       	rjmp	.+60     	; 0x46 <__bad_interrupt>
+   a:	1d c0       	rjmp	.+58     	; 0x46 <__bad_interrupt>
+   c:	1c c0       	rjmp	.+56     	; 0x46 <__bad_interrupt>
+   e:	1b c0       	rjmp	.+54     	; 0x46 <__bad_interrupt>
+  10:	1a c0       	rjmp	.+52     	; 0x46 <__bad_interrupt>
+  12:	19 c0       	rjmp	.+50     	; 0x46 <__bad_interrupt>
+
+00000014 <__ctors_end>:
+  14:	11 24       	eor	r1, r1
+  16:	1f be       	out	0x3f, r1	; 63
+  18:	cf e9       	ldi	r28, 0x9F	; 159
+  1a:	cd bf       	out	0x3d, r28	; 61
+
+0000001c <__do_copy_data>:
+  1c:	10 e0       	ldi	r17, 0x00	; 0
+  1e:	a0 e6       	ldi	r26, 0x60	; 96
+  20:	b0 e0       	ldi	r27, 0x00	; 0
+  22:	ee e7       	ldi	r30, 0x7E	; 126
+  24:	f2 e0       	ldi	r31, 0x02	; 2
+  26:	02 c0       	rjmp	.+4      	; 0x2c <__do_copy_data+0x10>
+  28:	05 90       	lpm	r0, Z+
+  2a:	0d 92       	st	X+, r0
+  2c:	a6 36       	cpi	r26, 0x66	; 102
+  2e:	b1 07       	cpc	r27, r17
+  30:	d9 f7       	brne	.-10     	; 0x28 <__do_copy_data+0xc>
+
+00000032 <__do_clear_bss>:
+  32:	20 e0       	ldi	r18, 0x00	; 0
+  34:	a6 e6       	ldi	r26, 0x66	; 102
+  36:	b0 e0       	ldi	r27, 0x00	; 0
+  38:	01 c0       	rjmp	.+2      	; 0x3c <.do_clear_bss_start>
+
+0000003a <.do_clear_bss_loop>:
+  3a:	1d 92       	st	X+, r1
+
+0000003c <.do_clear_bss_start>:
+  3c:	ac 36       	cpi	r26, 0x6C	; 108
+  3e:	b2 07       	cpc	r27, r18
+  40:	e1 f7       	brne	.-8      	; 0x3a <.do_clear_bss_loop>
+  42:	f9 d0       	rcall	.+498    	; 0x236 <main>
+  44:	1a c1       	rjmp	.+564    	; 0x27a <_exit>
+
+00000046 <__bad_interrupt>:
+  46:	dc cf       	rjmp	.-72     	; 0x0 <__vectors>
+
+00000048 <RC5_Reset>:
+State state = STATE_BEGIN;
+volatile uint16_t Clock27us = 0;
+
+void RC5_Reset()
+{
+	has_new = 0;
+  48:	10 92 6a 00 	sts	0x006A, r1	; 0x80006a <has_new>
+	ccounter = 14;
+  4c:	8e e0       	ldi	r24, 0x0E	; 14
+  4e:	80 93 6b 00 	sts	0x006B, r24	; 0x80006b <ccounter>
+	command = 0;
+  52:	10 92 69 00 	sts	0x0069, r1	; 0x800069 <command+0x1>
+  56:	10 92 68 00 	sts	0x0068, r1	; 0x800068 <command>
+	state = STATE_BEGIN;
+  5a:	85 e0       	ldi	r24, 0x05	; 5
+  5c:	80 93 60 00 	sts	0x0060, r24	; 0x800060 <__data_start>
+
+	/* Enable INT0 */
+	GIMSK |= _BV(INT0);
+  60:	8b b7       	in	r24, 0x3b	; 59
+  62:	80 64       	ori	r24, 0x40	; 64
+  64:	8b bf       	out	0x3b, r24	; 59
+  66:	08 95       	ret
+
+00000068 <RC5_NewCommandReceived>:
+}
+
+uint8_t RC5_NewCommandReceived(uint16_t *new_command)
+{
+  68:	fc 01       	movw	r30, r24
+	if(has_new)
+  6a:	90 91 6a 00 	lds	r25, 0x006A	; 0x80006a <has_new>
+  6e:	99 23       	and	r25, r25
+  70:	31 f0       	breq	.+12     	; 0x7e <RC5_NewCommandReceived+0x16>
+	{
+		*new_command = command;
+  72:	80 91 68 00 	lds	r24, 0x0068	; 0x800068 <command>
+  76:	90 91 69 00 	lds	r25, 0x0069	; 0x800069 <command+0x1>
+  7a:	91 83       	std	Z+1, r25	; 0x01
+  7c:	80 83       	st	Z, r24
+	}
+
+	return has_new;
+  7e:	80 91 6a 00 	lds	r24, 0x006A	; 0x80006a <has_new>
+}
+  82:	08 95       	ret
+
+00000084 <__vector_1>:
+
+ISR(INT0_vect)
+{
+  84:	1f 92       	push	r1
+  86:	0f 92       	push	r0
+  88:	0f b6       	in	r0, 0x3f	; 63
+  8a:	0f 92       	push	r0
+  8c:	11 24       	eor	r1, r1
+  8e:	2f 93       	push	r18
+  90:	3f 93       	push	r19
+  92:	4f 93       	push	r20
+  94:	5f 93       	push	r21
+  96:	6f 93       	push	r22
+  98:	7f 93       	push	r23
+  9a:	8f 93       	push	r24
+  9c:	9f 93       	push	r25
+  9e:	af 93       	push	r26
+  a0:	bf 93       	push	r27
+  a2:	cf 93       	push	r28
+  a4:	ef 93       	push	r30
+  a6:	ff 93       	push	r31
+	PORTB ^= 0x10;
+  a8:	98 b3       	in	r25, 0x18	; 24
+  aa:	80 e1       	ldi	r24, 0x10	; 16
+  ac:	89 27       	eor	r24, r25
+  ae:	88 bb       	out	0x18, r24	; 24
+	uint16_t delay = Clock27us;
+  b0:	80 91 66 00 	lds	r24, 0x0066	; 0x800066 <__data_end>
+  b4:	90 91 67 00 	lds	r25, 0x0067	; 0x800067 <__data_end+0x1>
+     *  0 - short space
+     *  2 - short pulse
+     *  4 - long space
+     *  6 - long pulse
+     */
+    uint8_t event = (PINB & _BV(PINB0)) ? 2 : 0;
+  b8:	b0 99       	sbic	0x16, 0	; 22
+  ba:	02 c0       	rjmp	.+4      	; 0xc0 <__stack+0x21>
+  bc:	c0 e0       	ldi	r28, 0x00	; 0
+  be:	01 c0       	rjmp	.+2      	; 0xc2 <__stack+0x23>
+  c0:	c2 e0       	ldi	r28, 0x02	; 2
+
+    if(delay > IR_LONG_MIN && delay < IR_LONG_MAX)
+  c2:	9c 01       	movw	r18, r24
+  c4:	23 53       	subi	r18, 0x33	; 51
+  c6:	31 09       	sbc	r19, r1
+  c8:	2f 31       	cpi	r18, 0x1F	; 31
+  ca:	31 05       	cpc	r19, r1
+  cc:	10 f4       	brcc	.+4      	; 0xd2 <__stack+0x33>
+    {
+        event += 4;
+  ce:	cc 5f       	subi	r28, 0xFC	; 252
+  d0:	04 c0       	rjmp	.+8      	; 0xda <__stack+0x3b>
+    }
+    else if(delay < IR_SHORT_MIN || delay > IR_SHORT_MAX)
+  d2:	40 97       	sbiw	r24, 0x10	; 16
+  d4:	82 97       	sbiw	r24, 0x22	; 34
+  d6:	08 f0       	brcs	.+2      	; 0xda <__stack+0x3b>
+    {
+        /* If delay wasn't long and isn't short then
+         * it is erroneous so we need to reset but
+         * we don't return from interrupt so we don't
+         * loose the edge currently detected. */
+        RC5_Reset();
+  d8:	b7 df       	rcall	.-146    	; 0x48 <RC5_Reset>
+    }
+
+	if(state == STATE_BEGIN)
+  da:	20 91 60 00 	lds	r18, 0x0060	; 0x800060 <__data_start>
+  de:	25 30       	cpi	r18, 0x05	; 5
+  e0:	01 f5       	brne	.+64     	; 0x122 <__stack+0x83>
+	{
+		ccounter--;
+  e2:	80 91 6b 00 	lds	r24, 0x006B	; 0x80006b <ccounter>
+  e6:	81 50       	subi	r24, 0x01	; 1
+  e8:	80 93 6b 00 	sts	0x006B, r24	; 0x80006b <ccounter>
+		command |= 1 << ccounter;
+  ec:	20 91 68 00 	lds	r18, 0x0068	; 0x800068 <command>
+  f0:	30 91 69 00 	lds	r19, 0x0069	; 0x800069 <command+0x1>
+  f4:	41 e0       	ldi	r20, 0x01	; 1
+  f6:	50 e0       	ldi	r21, 0x00	; 0
+  f8:	ba 01       	movw	r22, r20
+  fa:	02 c0       	rjmp	.+4      	; 0x100 <__stack+0x61>
+  fc:	66 0f       	add	r22, r22
+  fe:	77 1f       	adc	r23, r23
+ 100:	8a 95       	dec	r24
+ 102:	e2 f7       	brpl	.-8      	; 0xfc <__stack+0x5d>
+ 104:	cb 01       	movw	r24, r22
+ 106:	82 2b       	or	r24, r18
+ 108:	93 2b       	or	r25, r19
+ 10a:	90 93 69 00 	sts	0x0069, r25	; 0x800069 <command+0x1>
+ 10e:	80 93 68 00 	sts	0x0068, r24	; 0x800068 <command>
+		state = STATE_MID1;
+ 112:	81 e0       	ldi	r24, 0x01	; 1
+ 114:	80 93 60 00 	sts	0x0060, r24	; 0x800060 <__data_start>
+		Clock27us = 0;
+ 118:	10 92 67 00 	sts	0x0067, r1	; 0x800067 <__data_end+0x1>
+ 11c:	10 92 66 00 	sts	0x0066, r1	; 0x800066 <__data_end>
+		return;
+ 120:	4d c0       	rjmp	.+154    	; 0x1bc <__stack+0x11d>
+	}
+
+	State newstate = (trans[state] >> event) & 0x03;
+ 122:	e2 2f       	mov	r30, r18
+ 124:	f0 e0       	ldi	r31, 0x00	; 0
+ 126:	ef 59       	subi	r30, 0x9F	; 159
+ 128:	ff 4f       	sbci	r31, 0xFF	; 255
+ 12a:	80 81       	ld	r24, Z
+ 12c:	90 e0       	ldi	r25, 0x00	; 0
+ 12e:	02 c0       	rjmp	.+4      	; 0x134 <__stack+0x95>
+ 130:	95 95       	asr	r25
+ 132:	87 95       	ror	r24
+ 134:	ca 95       	dec	r28
+ 136:	e2 f7       	brpl	.-8      	; 0x130 <__stack+0x91>
+ 138:	38 2f       	mov	r19, r24
+ 13a:	33 70       	andi	r19, 0x03	; 3
+
+	if(newstate == state || state > STATE_START0)
+ 13c:	23 17       	cp	r18, r19
+ 13e:	11 f0       	breq	.+4      	; 0x144 <__stack+0xa5>
+ 140:	24 30       	cpi	r18, 0x04	; 4
+ 142:	10 f0       	brcs	.+4      	; 0x148 <__stack+0xa9>
+    {
+        /* No state change or wrong state means
+         * error so reset. */
+        RC5_Reset();
+ 144:	81 df       	rcall	.-254    	; 0x48 <RC5_Reset>
+        return;
+ 146:	3a c0       	rjmp	.+116    	; 0x1bc <__stack+0x11d>
+    }
+
+    state = newstate;
+ 148:	30 93 60 00 	sts	0x0060, r19	; 0x800060 <__data_start>
+
+    /* Emit 0 - jest decrement bit position counter
+     * cause data is already zeroed by default. */
+    if(state == STATE_MID0)
+ 14c:	32 30       	cpi	r19, 0x02	; 2
+ 14e:	41 f4       	brne	.+16     	; 0x160 <__stack+0xc1>
+    {
+        ccounter--;
+ 150:	80 91 6b 00 	lds	r24, 0x006B	; 0x80006b <ccounter>
+ 154:	81 50       	subi	r24, 0x01	; 1
+ 156:	80 93 6b 00 	sts	0x006B, r24	; 0x80006b <ccounter>
+    }
+
+    /* The only valid end states are MID0 and START1.
+     * Mid0 is ok, but if we finish in MID1 we need to wait
+     * for START1 so the last edge is consumed. */
+    if(ccounter == 0 && (state == STATE_START1 || state == STATE_MID0))
+ 15a:	88 23       	and	r24, r24
+ 15c:	11 f1       	breq	.+68     	; 0x1a2 <__stack+0x103>
+ 15e:	2a c0       	rjmp	.+84     	; 0x1b4 <__stack+0x115>
+     * cause data is already zeroed by default. */
+    if(state == STATE_MID0)
+    {
+        ccounter--;
+    }
+    else if(state == STATE_MID1)
+ 160:	31 30       	cpi	r19, 0x01	; 1
+ 162:	c9 f4       	brne	.+50     	; 0x196 <__stack+0xf7>
+    {
+        /* Emit 1 */
+        ccounter--;
+ 164:	80 91 6b 00 	lds	r24, 0x006B	; 0x80006b <ccounter>
+ 168:	81 50       	subi	r24, 0x01	; 1
+ 16a:	80 93 6b 00 	sts	0x006B, r24	; 0x80006b <ccounter>
+        command |= 1 << ccounter;
+ 16e:	20 91 68 00 	lds	r18, 0x0068	; 0x800068 <command>
+ 172:	30 91 69 00 	lds	r19, 0x0069	; 0x800069 <command+0x1>
+ 176:	41 e0       	ldi	r20, 0x01	; 1
+ 178:	50 e0       	ldi	r21, 0x00	; 0
+ 17a:	ba 01       	movw	r22, r20
+ 17c:	02 c0       	rjmp	.+4      	; 0x182 <__stack+0xe3>
+ 17e:	66 0f       	add	r22, r22
+ 180:	77 1f       	adc	r23, r23
+ 182:	8a 95       	dec	r24
+ 184:	e2 f7       	brpl	.-8      	; 0x17e <__stack+0xdf>
+ 186:	cb 01       	movw	r24, r22
+ 188:	82 2b       	or	r24, r18
+ 18a:	93 2b       	or	r25, r19
+ 18c:	90 93 69 00 	sts	0x0069, r25	; 0x800069 <command+0x1>
+ 190:	80 93 68 00 	sts	0x0068, r24	; 0x800068 <command>
+ 194:	0f c0       	rjmp	.+30     	; 0x1b4 <__stack+0x115>
+    }
+
+    /* The only valid end states are MID0 and START1.
+     * Mid0 is ok, but if we finish in MID1 we need to wait
+     * for START1 so the last edge is consumed. */
+    if(ccounter == 0 && (state == STATE_START1 || state == STATE_MID0))
+ 196:	20 91 6b 00 	lds	r18, 0x006B	; 0x80006b <ccounter>
+ 19a:	21 11       	cpse	r18, r1
+ 19c:	0b c0       	rjmp	.+22     	; 0x1b4 <__stack+0x115>
+ 19e:	80 fd       	sbrc	r24, 0
+ 1a0:	09 c0       	rjmp	.+18     	; 0x1b4 <__stack+0x115>
+    {
+	    state = STATE_END;
+ 1a2:	86 e0       	ldi	r24, 0x06	; 6
+ 1a4:	80 93 60 00 	sts	0x0060, r24	; 0x800060 <__data_start>
+	    has_new = 1;
+ 1a8:	81 e0       	ldi	r24, 0x01	; 1
+ 1aa:	80 93 6a 00 	sts	0x006A, r24	; 0x80006a <has_new>
+
+	    /* Disable INT0 */
+	    GIMSK &= ~_BV(INT0);
+ 1ae:	8b b7       	in	r24, 0x3b	; 59
+ 1b0:	8f 7b       	andi	r24, 0xBF	; 191
+ 1b2:	8b bf       	out	0x3b, r24	; 59
+    }
+
+    Clock27us = 0;
+ 1b4:	10 92 67 00 	sts	0x0067, r1	; 0x800067 <__data_end+0x1>
+ 1b8:	10 92 66 00 	sts	0x0066, r1	; 0x800066 <__data_end>
+}
+ 1bc:	ff 91       	pop	r31
+ 1be:	ef 91       	pop	r30
+ 1c0:	cf 91       	pop	r28
+ 1c2:	bf 91       	pop	r27
+ 1c4:	af 91       	pop	r26
+ 1c6:	9f 91       	pop	r25
+ 1c8:	8f 91       	pop	r24
+ 1ca:	7f 91       	pop	r23
+ 1cc:	6f 91       	pop	r22
+ 1ce:	5f 91       	pop	r21
+ 1d0:	4f 91       	pop	r20
+ 1d2:	3f 91       	pop	r19
+ 1d4:	2f 91       	pop	r18
+ 1d6:	0f 90       	pop	r0
+ 1d8:	0f be       	out	0x3f, r0	; 63
+ 1da:	0f 90       	pop	r0
+ 1dc:	1f 90       	pop	r1
+ 1de:	18 95       	reti
+
+000001e0 <HW_init>:
+
+void HW_init(void)
+{
+	// TMR0 fast PWM mode
+	TCCR0A = _BV(COM0A1) | _BV(WGM01) | _BV(WGM00);
+ 1e0:	83 e8       	ldi	r24, 0x83	; 131
+ 1e2:	8f bd       	out	0x2f, r24	; 47
+	TCCR0B = _BV(CS00);   // clock source = CLK, start PWM
+ 1e4:	81 e0       	ldi	r24, 0x01	; 1
+ 1e6:	83 bf       	out	0x33, r24	; 51
+	// Enable IRQ
+	TIMSK0 |= _BV(TOIE0);
+ 1e8:	89 b7       	in	r24, 0x39	; 57
+ 1ea:	82 60       	ori	r24, 0x02	; 2
+ 1ec:	89 bf       	out	0x39, r24	; 57
+	// PWM out
+	OCR0A = 100;
+ 1ee:	84 e6       	ldi	r24, 0x64	; 100
+ 1f0:	86 bf       	out	0x36, r24	; 54
+	// PB1 - input, PB0 - out
+	DDRB |= _BV(PB3)|_BV(PB4)|_BV(PB0);
+ 1f2:	87 b3       	in	r24, 0x17	; 23
+ 1f4:	89 61       	ori	r24, 0x19	; 25
+ 1f6:	87 bb       	out	0x17, r24	; 23
+	/* Set INT0 to trigger on any edge */
+	MCUCR |= _BV(ISC00);
+ 1f8:	85 b7       	in	r24, 0x35	; 53
+ 1fa:	81 60       	ori	r24, 0x01	; 1
+ 1fc:	85 bf       	out	0x35, r24	; 53
+ 1fe:	08 95       	ret
+
+00000200 <__vector_3>:
+
+}
+
+// every 27uS
+ISR(TIM0_OVF_vect)
+{
+ 200:	1f 92       	push	r1
+ 202:	0f 92       	push	r0
+ 204:	0f b6       	in	r0, 0x3f	; 63
+ 206:	0f 92       	push	r0
+ 208:	11 24       	eor	r1, r1
+ 20a:	8f 93       	push	r24
+ 20c:	9f 93       	push	r25
+	PORTB ^= 0x8;
+ 20e:	98 b3       	in	r25, 0x18	; 24
+ 210:	88 e0       	ldi	r24, 0x08	; 8
+ 212:	89 27       	eor	r24, r25
+ 214:	88 bb       	out	0x18, r24	; 24
+	Clock27us ++;
+ 216:	80 91 66 00 	lds	r24, 0x0066	; 0x800066 <__data_end>
+ 21a:	90 91 67 00 	lds	r25, 0x0067	; 0x800067 <__data_end+0x1>
+ 21e:	01 96       	adiw	r24, 0x01	; 1
+ 220:	90 93 67 00 	sts	0x0067, r25	; 0x800067 <__data_end+0x1>
+ 224:	80 93 66 00 	sts	0x0066, r24	; 0x800066 <__data_end>
+}
+ 228:	9f 91       	pop	r25
+ 22a:	8f 91       	pop	r24
+ 22c:	0f 90       	pop	r0
+ 22e:	0f be       	out	0x3f, r0	; 63
+ 230:	0f 90       	pop	r0
+ 232:	1f 90       	pop	r1
+ 234:	18 95       	reti
+
+00000236 <main>:
+
+int main(void)
+{
+ 236:	cf 93       	push	r28
+ 238:	df 93       	push	r29
+ 23a:	00 d0       	rcall	.+0      	; 0x23c <main+0x6>
+ 23c:	cd b7       	in	r28, 0x3d	; 61
+ 23e:	dd 27       	eor	r29, r29
+	HW_init();
+ 240:	cf df       	rcall	.-98     	; 0x1e0 <HW_init>
+	RC5_Reset();
+ 242:	02 df       	rcall	.-508    	; 0x48 <RC5_Reset>
+	sei();
+ 244:	78 94       	sei
+			} else {
+				uint8_t cmdnum = RC5_GetCommandBits(command);
+				switch (cmdnum)
+				{
+				case 16:
+					OCR0A = 2;
+ 246:	02 e0       	ldi	r16, 0x02	; 2
+					break;
+				case 17:
+					OCR0A = 200;
+ 248:	18 ec       	ldi	r17, 0xC8	; 200
+    while (1) 
+    {
+		uint16_t command;
+
+        /* Poll for new RC5 command */
+        if(RC5_NewCommandReceived(&command))
+ 24a:	ce 01       	movw	r24, r28
+ 24c:	01 96       	adiw	r24, 0x01	; 1
+ 24e:	0c df       	rcall	.-488    	; 0x68 <RC5_NewCommandReceived>
+ 250:	88 23       	and	r24, r24
+ 252:	d9 f3       	breq	.-10     	; 0x24a <main+0x14>
+        {
+            /* Reset RC5 lib so the next command
+             * can be decoded. This is a must! */
+            RC5_Reset();
+ 254:	f9 de       	rcall	.-526    	; 0x48 <RC5_Reset>
+			if(RC5_GetStartBits(command) != 3)
+ 256:	89 81       	ldd	r24, Y+1	; 0x01
+ 258:	9a 81       	ldd	r25, Y+2	; 0x02
+ 25a:	9c 01       	movw	r18, r24
+ 25c:	22 27       	eor	r18, r18
+ 25e:	30 73       	andi	r19, 0x30	; 48
+ 260:	21 15       	cp	r18, r1
+ 262:	30 43       	sbci	r19, 0x30	; 48
+ 264:	91 f7       	brne	.-28     	; 0x24a <main+0x14>
+			{
+				// Ignore bad command
+			} else {
+				uint8_t cmdnum = RC5_GetCommandBits(command);
+ 266:	8f 73       	andi	r24, 0x3F	; 63
+				switch (cmdnum)
+ 268:	80 31       	cpi	r24, 0x10	; 16
+ 26a:	19 f0       	breq	.+6      	; 0x272 <main+0x3c>
+ 26c:	81 31       	cpi	r24, 0x11	; 17
+ 26e:	19 f0       	breq	.+6      	; 0x276 <main+0x40>
+ 270:	ec cf       	rjmp	.-40     	; 0x24a <main+0x14>
+				{
+				case 16:
+					OCR0A = 2;
+ 272:	06 bf       	out	0x36, r16	; 54
+					break;
+ 274:	ea cf       	rjmp	.-44     	; 0x24a <main+0x14>
+				case 17:
+					OCR0A = 200;
+ 276:	16 bf       	out	0x36, r17	; 54
+				default:
+					break;
+				}
+			}
+		}
+    }
+ 278:	e8 cf       	rjmp	.-48     	; 0x24a <main+0x14>
+
+0000027a <_exit>:
+ 27a:	f8 94       	cli
+
+0000027c <__stop_program>:
+ 27c:	ff cf       	rjmp	.-2      	; 0x27c <__stop_program>
