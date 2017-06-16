@@ -13,6 +13,9 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
+// Predefined address of remote
+#define IR_ADDRESS 0
+
 typedef enum {
     STATE_START1,
     STATE_MID1,
@@ -28,13 +31,12 @@ typedef enum {
 #define LONG_PULSE 50 /* 1690us */
 #define SHORT_PULSE 12 /* 562us */
 volatile uint16_t Clock27us = 0;
-volatile uint8_t IR_Addr, IR_Command, IR_counter, IR_tmp, IR_bit, IR_old;
+volatile static uint8_t IR_Addr, IR_Command, IR_counter, IR_tmp, IR_bit;
 volatile uint8_t has_new;
 
 void IR_Reset()
 {
 	has_new = IR_counter = 0;
-	//PORTB &= ~0x18;
 	/* Enable INT0 */
 	GIMSK |= _BV(INT0);
 }
@@ -63,26 +65,16 @@ ISR(INT0_vect)
 			IR_counter ++;
 			IR_tmp <<= 1;
 			IR_tmp += (IR_bit == 2)? 1:0;
-			//PORTB ^= 0x8;
-//			if(IR_bit == 2)
-//				PORTB |= 0x10;
-//			else
-//				PORTB &= ~0x10;
 
 			if (IR_counter & 7) return;
 
 			switch(IR_counter & 0x38) {
 			case 0x8:
-				if (IR_tmp == 0)
-					PORTB ^= 0x8;
 				IR_Addr = IR_tmp;
-				PORTB ^= 0x10;
 				break;
 			case 0x10:
-				if (IR_tmp == 0xFF)
-					PORTB ^= 0x8;
-				if (IR_Addr != ~IR_tmp) {
-					//IR_Reset(); // Wrong inverse decoding
+				if (IR_Addr != (IR_tmp^0xFF)) {
+					IR_Reset(); // Wrong inverse decoding
 					PORTB ^= 0x10;
 				}
 				break;
@@ -90,9 +82,10 @@ ISR(INT0_vect)
 				IR_Command = IR_tmp;
 				break;
 			case 0x20:
-				if (IR_Command == ~IR_tmp) {
+				if (IR_Command == (IR_tmp^0xFF)) {
 					has_new = 1;
 					PORTB ^= 0x10;
+					GIMSK &= ~(_BV(INT0));
 				}
 				break;
 			default:
@@ -147,8 +140,25 @@ int main(void)
 
     while (1)
     {
+    	if(has_new) {
+    		PORTB ^= 0x8;
+    		OCR0A = IR_Addr;
+    		if (IR_Addr == IR_ADDRESS) {
+    			switch(IR_Command) {
 
-
+    			case 0x32:
+    				OCR0A = 10;
+    				break;
+    			case 23:
+    				OCR0A = 200;
+    				break;
+    			default:
+    				OCR0A = IR_Command;
+    				break;
+    			}
+    		}
+    		IR_Reset();
+    	}
     }
 	return 0;
 }
