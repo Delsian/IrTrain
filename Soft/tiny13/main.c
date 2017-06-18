@@ -15,24 +15,17 @@
 
 // Predefined address of remote
 #define IR_ADDRESS 0
+#define SLEEP_TIMEOUT 100
 
-typedef enum {
-    STATE_START1,
-    STATE_MID1,
-    STATE_MID0,
-    STATE_START0,
-    STATE_ERROR,
-    STATE_BEGIN,
-    STATE_END
-} State;
-
-#define LONG_HEADER 320 /* 9ms */
-#define SHORT_HEADER 150 /* 4.5ms */
+#define LONG_HEADER 310 /* 9ms */
+#define SHORT_HEADER 130 /* 4.5ms */
 #define LONG_PULSE 50 /* 1690us */
 #define SHORT_PULSE 12 /* 562us */
 volatile uint16_t Clock27us = 0;
 volatile static uint8_t IR_Addr, IR_Command, IR_counter, IR_tmp, IR_bit;
 volatile uint8_t has_new;
+volatile uint16_t to_sleep;
+static uint8_t cur_speed = 0;
 
 void IR_Reset()
 {
@@ -43,6 +36,11 @@ void IR_Reset()
 
 ISR(INT0_vect)
 {
+	// Wake from sleep
+	to_sleep = SLEEP_TIMEOUT;
+	// Enable timer IRQ
+	TIMSK0 |= _BV(TOIE0);
+
 	Clock27us = 0;
 	if (IR_bit == 0) {
 		IR_Reset(); // Pulse too short
@@ -75,7 +73,6 @@ ISR(INT0_vect)
 			case 0x10:
 				if (IR_Addr != (IR_tmp^0xFF)) {
 					IR_Reset(); // Wrong inverse decoding
-					PORTB ^= 0x10;
 				}
 				break;
 			case 0x18:
@@ -84,7 +81,6 @@ ISR(INT0_vect)
 			case 0x20:
 				if (IR_Command == (IR_tmp^0xFF)) {
 					has_new = 1;
-					PORTB ^= 0x10;
 					GIMSK &= ~(_BV(INT0));
 				}
 				break;
@@ -100,6 +96,7 @@ ISR(INT0_vect)
 
 ISR(TIM0_OVF_vect)
 {
+	to_sleep --;
 	if (Clock27us > LONG_HEADER) {
 		Clock27us = 0xFFFF;
 		IR_bit = 4;
@@ -121,15 +118,29 @@ void HW_init(void)
 	// TMR0 fast PWM mode
 	TCCR0A = _BV(COM0A1) | _BV(WGM01) | _BV(WGM00);
 	TCCR0B = _BV(CS00);   // clock source = CLK, start PWM
-	// Enable IRQ
-	TIMSK0 |= _BV(TOIE0);
+
 	// PWM out
-	OCR0A = 100;
-	// PB1 - input, PB0 - out
+	OCR0A = 0;
+	// PB1 - input, PB0 - PWM out, PB2 - Dir, PB3 - LED
 	DDRB |= _BV(PB3)|_BV(PB4)|_BV(PB2)|_BV(PB0);
 	/* Set INT0 to trigger on any edge */
 	MCUCR |= _BV(ISC00);
 
+}
+
+// +1 - one step up
+// -1 - one step down
+// 0 - stop
+static void set_speed(int8_t delta)
+{
+	const uint8_t steps[4] = {1,80, 170, 255};
+	cur_speed += delta;
+	OCR0A = steps[cur_speed&3];
+	if (cur_speed & 4) {
+		PORTB &= ~0x4;
+	} else {
+		PORTB |= 0x4;
+	}
 }
 
 int main(void)
@@ -140,20 +151,23 @@ int main(void)
 
     while (1)
     {
+    	if(to_sleep<5) {
+    		PORTB ^= 0x10;
+    	}
     	if(has_new) {
-    		PORTB ^= 0x8;
-    		OCR0A = IR_Addr;
     		if (IR_Addr == IR_ADDRESS) {
     			switch(IR_Command) {
+    			case 0x22: // <-
+    				set_speed(1);
+    				break;
+    			case 0xC2: //->
+    				set_speed(-1);
+    				break;
+    			case 0x2: // stop
+    				set_speed(0);
+    				break;
 
-    			case 0x32:
-    				OCR0A = 10;
-    				break;
-    			case 23:
-    				OCR0A = 200;
-    				break;
     			default:
-    				OCR0A = IR_Command;
     				break;
     			}
     		}
