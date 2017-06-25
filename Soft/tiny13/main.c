@@ -12,10 +12,11 @@
 #include <stdint.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include <avr/sleep.h>
 
 // Predefined address of remote
 #define IR_ADDRESS 0
-#define SLEEP_TIMEOUT 100
+#define SLEEP_TIMEOUT 50000
 
 #define LONG_HEADER 310 /* 9ms */
 #define SHORT_HEADER 130 /* 4.5ms */
@@ -25,16 +26,16 @@ volatile uint16_t Clock27us = 0;
 volatile static uint8_t IR_Addr, IR_Command, IR_counter, IR_tmp, IR_bit;
 volatile uint8_t has_new;
 volatile uint16_t to_sleep;
-static uint8_t cur_speed = 0;
+static int8_t cur_speed = 0;
 
 void IR_Reset()
 {
 	has_new = IR_counter = 0;
-	/* Enable INT0 */
-	GIMSK |= _BV(INT0);
+	/* Enable pin change int */
+	GIMSK |= _BV(PCIE);
 }
 
-ISR(INT0_vect)
+ISR(PCINT0_vect)
 {
 	// Wake from sleep
 	to_sleep = SLEEP_TIMEOUT;
@@ -115,6 +116,8 @@ ISR(TIM0_OVF_vect)
 
 void HW_init(void)
 {
+	ACSR |= _BV(ACD);
+
 	// TMR0 fast PWM mode
 	TCCR0A = _BV(COM0A1) | _BV(WGM01) | _BV(WGM00);
 	TCCR0B = _BV(CS00);   // clock source = CLK, start PWM
@@ -124,8 +127,16 @@ void HW_init(void)
 	// PB1 - input, PB0 - PWM out, PB2 - Dir, PB3 - LED
 	DDRB |= _BV(PB3)|_BV(PB4)|_BV(PB2)|_BV(PB0);
 	/* Set INT0 to trigger on any edge */
-	MCUCR |= _BV(ISC00);
+	PCMSK |= (1<<PCINT1);
+	//MCUCR |= _BV(ISC00);
 
+}
+
+static void stop_all(void)
+{
+	cur_speed = 0;
+	OCR0A = 0;
+	PORTB = 0;
 }
 
 // +1 - one step up
@@ -133,13 +144,18 @@ void HW_init(void)
 // 0 - stop
 static void set_speed(int8_t delta)
 {
-	const uint8_t steps[4] = {1,80, 170, 255};
-	cur_speed += delta;
-	OCR0A = steps[cur_speed&3];
-	if (cur_speed & 4) {
-		PORTB &= ~0x4;
+	if (!delta) {
+		stop_all();
 	} else {
-		PORTB |= 0x4;
+		PORTB ^= 0x8;
+		const uint8_t steps[4] = {1,80, 170, 255};
+		cur_speed += delta;
+		OCR0A = steps[cur_speed&3];
+		if (cur_speed & 4) {
+			PORTB &= ~0x4;
+		} else {
+			PORTB |= 0x4;
+		}
 	}
 }
 
@@ -149,10 +165,14 @@ int main(void)
 	IR_Reset();
 	sei();
 
+	to_sleep = SLEEP_TIMEOUT;
+	set_sleep_mode(SLEEP_MODE_PWR_DOWN);
     while (1)
     {
     	if(to_sleep<5) {
-    		PORTB ^= 0x10;
+    		stop_all();
+    		//TIMSK0 &= ~(_BV(TOIE0));
+    		//sleep_mode();
     	}
     	if(has_new) {
     		if (IR_Addr == IR_ADDRESS) {
